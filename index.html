@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Student Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+   
+    <nav class="sidebar" id="sidebar" style="display:none;">
+      <ul>
+        <li><a href="#" onclick="showPage('add')">Student Information</a></li>
+        <li><a href="#" onclick="showPage('search')">Search Students</a></li>
+        <li><a href="#" onclick="showPage('list')">View Students</a></li>
+        <li><a href="#" onclick="logout()">Logout</a></li>
+      </ul>
+    </nav>
+
+    <div class="container">
+      <h1>Student Portal</h1>
+
+      <section id="signup" class="page">
+        <h2>Sign Up</h2>
+        <input id="signupUser" placeholder="Username">
+        <input id="signupPass" type="password" placeholder="Password">
+        <button onclick="signUp()">Sign Up</button>
+        <p>Already have an account? <a href="#" onclick="showPage('login')">Login here</a></p>
+      </section>
+
+      <section id="login" class="page" style="display:none;">
+        <h2>Login</h2>
+        <input id="loginUser" placeholder="Username">
+        <input id="loginPass" type="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <p>No account yet? <a href="#" onclick="showPage('signup')">Sign up here</a></p>
+      </section>
+
+      <section id="add" class="page" style="display:none;">
+        <h2>Add Student</h2>
+        <div class="form-row">
+          <input id="studentId" placeholder="Student ID">
+          <input id="lastName" placeholder="Last Name">
+          <input id="firstName" placeholder="First Name">
+          <select id="course">
+            <option value="">-- Select Course --</option>
+            <option>Computer Science</option>
+            <option>Information Technology</option>
+            <option>Business</option>
+            <option>Criminology</option>
+            <option>Hotel Management</option>
+          </select>
+          <select id="yearLevel">
+            <option value="">-- Year Level --</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+          </select>
+          <input id="age" type="number" placeholder="Age">
+          <button id="saveBtn">Add</button>
+        </div>
+      </section>
+
+      <section id="search" class="page" style="display:none;">
+        <div class="form-row">
+          <input id="searchInput" placeholder="Search by ID or Name">
+          <button id="searchBtn">Search</button>
+          <button id="showAllBtn">Show All</button>
+        </div>
+      </section>
+
+      
+      <section id="list" class="page" style="display:none;">
+        <h2>List of Students</h2>
+        <table id="studentsTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Last Name</th>
+              <th>First Name</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const users = [];
+    const students = [];
+    let currentUser = null;
+
+    function signUp() {
+      const u = document.getElementById('signupUser').value.trim();
+      const p = document.getElementById('signupPass').value.trim();
+      if (users.find(x => x.user === u)) { alert("Username already exists"); return; }
+      users.push({ user: u, pass: p });
+      showPage('login');
+    }
+
+    function login() {
+      const u = document.getElementById('loginUser').value.trim();
+      const p = document.getElementById('loginPass').value.trim();
+      const acc = users.find(x => x.user === u && x.pass === p);
+  
+      currentUser = acc;
+    
+      document.getElementById('sidebar').style.display = 'block';
+      showPage('add');
+    }
+
+    function logout() {
+      currentUser = null;
+      document.getElementById('sidebar').style.display = 'none';
+      showPage('login');
+    }
+
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+      document.getElementById(pageId).style.display = 'block';
+    }
+
+  
+    function render(list = students) {
+      const tbody = document.querySelector('#studentsTable tbody');
+      tbody.innerHTML = '';
+      list.forEach((s, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${s.id}</td>
+          <td>${s.lastName}</td>
+          <td>${s.firstName}</td>
+          <td>
+            <button class="edit-btn" onclick="editStudent(${i})">Edit</button>
+            <button class="delete-btn" onclick="deleteStudent(${i})">Delete</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function saveStudent() {
+      const id = document.getElementById('studentId').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const firstName = document.getElementById('firstName').value.trim();
+      const course = document.getElementById('course').value;
+      const year = document.getElementById('yearLevel').value;
+      const age = document.getElementById('age').value.trim();
+
+      if (!id || !lastName || !firstName) {
+        alert("Please fill required fields");
+        return;
+      }
+
+      students.push({ id, lastName, firstName, course, year, age });
+      render();
+      clearForm();
+      showPage('list');
+    }
+
+    function clearForm() {
+      document.getElementById('studentId').value = '';
+      document.getElementById('lastName').value = '';
+      document.getElementById('firstName').value = '';
+      document.getElementById('course').selectedIndex = 0;
+      document.getElementById('yearLevel').selectedIndex = 0;
+      document.getElementById('age').value = '';
+    }
+
+    function editStudent(i) {
+      const s = students[i];
+      document.getElementById('studentId').value = s.id;
+      document.getElementById('lastName').value = s.lastName;
+      document.getElementById('firstName').value = s.firstName;
+      document.getElementById('course').value = s.course;
+      document.getElementById('yearLevel').value = s.year;
+      document.getElementById('age').value = s.age;
+      students.splice(i, 1);
+      showPage('add');
+    }
+
+    function deleteStudent(i) {
+      students.splice(i, 1);
+      render();
+    }
+
+    function search() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (!q) { render(); return; }
+      const res = students.filter(s =>
+        s.id.toLowerCase().includes(q) ||
+        s.lastName.toLowerCase().includes(q) ||
+        s.firstName.toLowerCase().includes(q)
+      );
+      render(res);
+      showPage('list');
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', saveStudent);
+    document.getElementById('searchBtn').addEventListener('click', search);
+    document.getElementById('showAllBtn').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
+      render();
+      showPage('list');
+    });
+
+    showPage('signup');
+  </script>
+</body>
+</html>
